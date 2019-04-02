@@ -1,0 +1,326 @@
+<?php
+
+use yii\helpers\Html;
+use yii\widgets\ActiveForm;
+use yii\helpers\Url;
+use kartik\date\DatePicker;
+use yii\helpers\ArrayHelper;
+use backend\models\Project;
+use backend\models\FundingAgency;
+use backend\models\CostCentre;
+use kartik\depdrop\DepDrop;
+use kartik\select2\Select2;
+use wbraganca\dynamicform\DynamicFormWidget;
+
+
+
+/* @var $this yii\web\View */
+/* @var $model backend\models\ClaimRequest */
+/* @var $form yii\widgets\ActiveForm */
+?>
+
+
+<div class="claim-request-form">
+<ul class="nav nav-tabs">
+        <li class="active"><a class="custom-control-label" for="radio"  href="<?=Url::toRoute('claim-request/create')?>">Local Convence</a></li>
+        <li><a class="custom-control-label" for="radio"  href="<?=Url::toRoute('claim-request/createtravel')?>">Travel Convence</a></li>
+        <li ><a class="custom-control-label" for="radio"  href="<?=Url::toRoute('claim-request/createother')?>">Other Convence</a></li>
+</ul>
+<div class="row">
+<div class="col-md-12" >
+<div id="flashmessage"></div>
+
+</div>
+</div>
+    <?php $form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data','id' => 'dynamic-form']]); ?>
+   
+    <div class="row">
+        <div class="col-md-2">
+        <?= $form->field($model, 'user_id')->textInput(['readonly'=>true]) ?> 
+        </div>
+        </div>
+    </div>
+    <div class="row">
+   <div class="col-md-2"><?= $form->field($model, 'visit_from')->textInput(['maxlength' => true]) ?> </div>
+   <div class="col-md-2"> <?= $form->field($model, 'visit_to')->textInput(['maxlength' => true]) ?> </div>
+   <div class="col-md-2"><?= $form->field($model, 'mode')->textInput(['maxlength' => true]) ?></div>
+   <div class="col-md-2"><?= $form->field($model, 'date')->textInput(['maxlength' => true,"class" => "form-control datePicker",'required'=>true]) ?>
+   <?php
+/* $form->field($model, 'date')->widget(DatePicker::classname(), [
+    'options' => ['placeholder' => 'Enter date ...'],
+    'pluginOptions' => [
+        'format' => 'yyyy-mm-dd',
+        'autoclose'=>true
+    ]
+]);
+*/
+?>
+   
+   <?php // $form->field($model, 'date')->textInput() ?></div>
+   </div>
+   <?php /*
+   <div class="row">
+   <div class="col-md-2"><?= $form->field($model, 'amount2')->textInput(['maxlength' => true]) ?> </div>
+   <div class="col-md-2"> <?= $form->field($model, 'amount3')->textInput(['maxlength' => true]) ?> </div>
+   <div class="col-md-2"><?= $form->field($model, 'amount4')->textInput(['maxlength' => true]) ?> </div>
+   <div class="col-md-2"> <?= $form->field($model, 'amount5')->textInput(['maxlength' => true]) ?> </div>
+   </div>
+*/ ?>
+   <div class="row">
+   <div class="col-md-2"><?= $form->field($model, 'amount')->textInput(['maxlength' => true,'onchange'=>'ajaxamount2word()']) ?> </div>
+   <div class="col-md-6"> <?= $form->field($model, 'amountinword')->textInput(['maxlength' => true,'readonly'=>true]) ?> </div>
+   </div>
+
+   <div class="row">
+   <div class="col-md-8"><?= $form->field($model, 'purpose')->textarea(['maxlength' => true]) ?> </div>
+    </div>
+   
+   <?php /*******************RO SECTION********* */?>
+   <?php if(Authstatus($_SESSION['login_info']['username'])==2||Authstatus($_SESSION['login_info']['username'])==3 || Authstatus($_SESSION['login_info']['username'])==4){ ?>
+  
+    <div class="row">
+
+    <?php
+$FundingAgency = ArrayHelper::map(FundingAgency::find()->all(),'id','name');
+
+?>
+   <div class="col-md-4">
+   <label class="control-label" for="claimrequest-fund_agency">Funding Agency</label>
+   <?php  echo Select2::widget([
+    'name' => 'fund_agency',
+    'data' => $FundingAgency,
+    //'size' => Select2::SMALL,
+    'options' => ['placeholder' => 'Select Funding Agency ...'],
+    'pluginOptions' => [
+        'allowClear' => true
+    ],
+]); ?>
+   
+   
+   <?php $form->field($model, 'fund_agency')->DropdownList($FundingAgency,['prompt'=>'Select Funding Agency']) ?> </div>
+   <div class="col-md-4"> <?= $form->field($model, 'nature_service')->textInput(['maxlength' => true]) ?> </div>
+   </div>
+   <div class="row">
+   <div class="col-md-8"> <?= $form->field($model, 'ro_comment')->textarea(['maxlength' => true]) ?> </div>
+   </div>
+
+   <?php } ?>
+  <?php ///////END RO SECTION////?>
+
+  <?PHP //////// HO SECTION ///////?>
+  <?php if(Authstatus($_SESSION['login_info']['username'])==3 || Authstatus($_SESSION['login_info']['username'])==4){ ?>
+  
+  <div class="row">
+   <div class="col-md-2"><?= $form->field($model, 'naturehead')->textInput(['maxlength' => true]) ?> </div>
+   <div class="col-md-2">
+   <?php
+
+
+
+?>
+
+
+    <?php // $form->field($model, 'project_id')->textInput(['maxlength' => true]) 
+    $Project = ArrayHelper::map(Project::find()->all(),'id','name');
+
+    ?>
+
+    <?= $form->field($model, 'project_id')->DropdownList($Project,['id'=>'cat-id','prompt'=>'Select Project']) ?>
+
+    
+</div>
+   <div class="col-md-2">
+   <?php
+echo $form->field($model, 'project_budget_line_id')->widget(DepDrop::classname(), [
+    'options'=>['id'=>'subcat-id'],
+    'pluginOptions'=>[
+        'depends'=>['cat-id'],
+        'placeholder'=>'Select...',
+        'url'=>Url::to(['/claim-request/formdata'])
+    ]
+]);
+?>
+   
+   <?php // $form->field($model, 'project_budget_line_id')->textInput(['maxlength' => true]) ?> </div>
+   <div class="col-md-2"> <?php // $form->field($model, 'costcenter_id')->textInput(['maxlength' => true]) ?> </div>
+</div>
+
+<div class="row">
+<?php
+$CostCentre = ArrayHelper::map(CostCentre::find()->all(),'id','name');
+$modelCostCentre=new CostCentre();
+?>
+   <div class="col-md-4"><?= $form->field($modelCostCentre, 'name')->DropdownList($CostCentre,['id'=>'ccat-id','prompt'=>'Select Cost Center']) ?> </div>
+   <div class="col-md-4"> 
+   <?php
+echo $form->field($model, 'costcenter_id')->widget(DepDrop::classname(), [
+    'options'=>['id'=>'ccsubcat-id'],
+    'pluginOptions'=>[
+        'depends'=>['ccat-id'],
+        'placeholder'=>'Select...',
+        'url'=>Url::to(['/claim-request/costcenterformdata'])
+    ]
+]);
+
+?> 
+   <?php // $form->field($model, 'costcenter_id')->textInput(['maxlength' => true]) ?> </div>
+  </div>
+
+   <div class="row">
+   <div class="col-md-2"><?= $form->field($model, 'program_id')->textInput(['maxlength' => true]) ?> </div>
+   <div class="col-md-2"> <?= $form->field($model, 'locationdescription_id')->textInput(['maxlength' => true]) ?> </div>
+  </div>
+
+  <div class="row">
+   <div class="col-md-8"><?= $form->field($model, 'ho_comment')->textarea(['maxlength' => true]) ?> </div>
+   </div>
+
+  <?php }?>
+   
+   <?php //***********Accounts Section************ */?>
+<?php if(Authstatus($_SESSION['login_info']['username'])==4){ ?>
+
+ <div class="row">
+   <div class="col-md-4"><?= $form->field($model, 'tds')->textInput(['maxlength' => true]) ?> </div>
+   <div class="col-md-4"> <?= $form->field($model, 'advance')->textInput(['maxlength' => true]) ?> </div>
+   <div class="col-md-4"><?= $form->field($model, 'net')->textInput(['maxlength' => true]) ?> </div>
+   <div class="col-md-3"> <?= $form->field($model, 'refnumber')->textInput(['maxlength' => true]) ?> </div>
+   
+   <div class="col-md-4"> <?php echo $form->field($model, 'refdate')->widget(DatePicker::classname(), [
+    'options' => ['placeholder' => 'Enter date ...'],
+    'pluginOptions' => [
+        'format' => 'yyyy-mm-dd',
+        'autoclose'=>true
+    ]
+]);?> </div>
+   </div>
+<?php }?>
+  
+  
+
+   <div class="row">
+   <div class="col-md-3">
+   <!--<input name="file" id="file" size="27" type="file" /><br />-->
+   <?= $form->field($model, 'imageFile[]')->fileInput(['multiple' => true, 'accept' => 'image/*']) ?>
+   <?php /*<?= $form->field($model, 'imageFile2[]')->fileinput() ?>
+   <?= $form->field($model, 'imageFile3[]')->fileinput() ?>
+   <?= $form->field($model, 'imageFile4[]')->fileinput() ?>
+   <?= $form->field($model, 'imageFile5[]')->fileinput() ?> */?>
+
+
+   
+   </div>
+   </div>
+   <?php DynamicFormWidget::begin([
+        'widgetContainer' => 'dynamicform_wrapper',
+        'widgetBody' => '.container-items',
+        'widgetItem' => '.house-item',
+        'limit' => 10,
+        'min' => 1,
+        'insertButton' => '.add-more',
+        'deleteButton' => '.remove',
+        'model' => $model,
+        'formId' => 'dynamic-form',
+        'formFields' => [
+        'visit_from',
+        ],
+    ]); ?>
+
+<?php DynamicFormWidget::end(); ?>
+
+    <div class="form-group">
+        <?= Html::submitButton('Submit', ['class' => 'btn btn-success']) ?>
+        <?= Html::Button('Add more', ['class' => 'btn btn-success','id'=>'addmore','onclick'=>'add_more()']) ?>
+    </div>
+    <?php
+   /* $USERAUTH=new CheckAuth2($_SESSION['login_info']['username']);
+
+    if($USERAUTH->Checkuser()=='EMP'){
+        if($model->state_id==1 or $model->state_id==2){
+        //echo "<a href=".$updateUrl.'" class="btn btn-lg btn-success">Update</a>"';
+    }      
+    }elseif($USERAUTH->Checkuser()=='RO'){
+        if($model->state_id==2){
+            //echo "<a href=".$updateUrl.' class="btn btn-lg btn-success">Approve</a>"';
+        //include_once('_formreturnEMP.php');
+    }      
+    }elseif($USERAUTH->Checkuser()=='HO'){
+        if($model->state_id==3){
+            echo "<a href=".$updateUrl.' class="btn btn-lg btn-success">Approve</a>"';
+        include_once('_formreturnRO.php');
+    } echo Html::a('Delete', ['delete', 'id' => $model->id], [
+        'class' => 'btn btn-danger',
+        'data' => [
+            'confirm' => 'Are you sure you want to delete this item?',
+            'method' => 'post',
+        ],
+    ]);      
+    }elseif($USERAUTH->Checkuser()=='AC'){
+        if($model->state_id==4){
+            echo "<a href=".$updateUrl.' class="btn btn-lg btn-success">Approve</a>';
+            include_once('_formreturnHO.php');
+    }     
+    }  */
+?>
+    <?php ActiveForm::end(); ?>
+
+</div>
+<script type="text/javascript">
+function init() {
+	document.getElementById('file').onchange=function() {
+		document.getElementById('file').target = 'upload_target'; //'upload_target' is the name of the iframe
+	}
+}
+
+function add_more(){
+   
+    var user_id=$("#claimrequest-user_id").val();
+    var visit_from=$("#claimrequest-visit_from").val();
+    var visit_to=$("#claimrequest-visit_to").val();
+    var mode=$("#claimrequest-mode").val();
+    var date =$("#claimrequest-date").val();
+    var amount=$("#claimrequest-amount").val();
+    var amountinword=$("#claimrequest-amountinword").val();
+    var purpose=$("#claimrequest-purpose").val();
+    var ref='tes';
+    if(visit_from != '' && visit_to!='' && mode!='' && date!='' && amount!='' && amountinword!='' && purpose!=''){
+        $.ajax({
+
+        });
+    }else{
+        $("#flashmessage").html('<div class="alert alert-danger" role="alert"><strong>Please !</strong> please fill all mandatory fields and try submitting again.</div>');
+    }
+   
+}
+function ajaxamount2word(){
+        
+        var rupe = document.getElementById("claimrequest-amount").value;
+        // var reqid = document.getElementById("claim_id").value;
+        //alert(rupe);
+         if(rupe==''){
+            $('#claimrequest-amountinword').val('zero');
+         }else{
+           // $('#claimrequest-amountinword').val('zero');
+            //alert(rupe);
+         //console.log("Co2",year)
+         $.ajax({
+             url: '<?php echo Url::to(["site/num2word"]); ?>',
+             type: 'post',
+             data: {
+                
+                rupe : rupe,
+                // _csrf: '<?=Yii::$app->request->getCsrfToken()?>'
+             },
+           
+             success: function (data) {
+                $("#claimrequest-amountinword").val(data)
+                console.log(data)
+             },
+             error: function (jsonResponse) {
+                 console.log(jsonResponse);
+                 
+             }
+         });
+         }
+     }
+     </script> 
